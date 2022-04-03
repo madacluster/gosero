@@ -3,55 +3,41 @@ package relay
 import (
 	"fmt"
 
-	"gobot.io/x/gobot"
+	"github.com/madacluster/gosero/pkg/helpers"
 	"gobot.io/x/gobot/drivers/gpio"
 	"gobot.io/x/gobot/platforms/raspi"
 )
 
-func Start() {
+var RELAYPORT = helpers.GetEnv("RELAY_PORT", "11")
+
+func Start() error {
 	r := raspi.NewAdaptor()
-	relay := gpio.NewRelayDriver(r, "11")
-
-	work := func() {
-		if err := relay.On(); err != nil {
-			fmt.Printf("error: %v", err)
-		}
+	if err := r.Connect(); err != nil {
+		return err
+	}
+	relay := gpio.NewRelayDriver(r, RELAYPORT)
+	if err := relay.On(); err != nil {
+		fmt.Printf("error: %v", err)
+		return err
 	}
 
-	robot := gobot.NewRobot("startRelay",
-		[]gobot.Connection{r},
-		[]gobot.Device{relay},
-		work,
-	)
-
-	if err := robot.Start(); err != nil {
+	if err := relay.Start(); err != nil {
 		fmt.Println(err)
+		return err
 	}
-	if err := robot.Stop(); err != nil {
-		fmt.Println(err)
-	}
+	return nil
 }
 
 func Stop() {
 	r := raspi.NewAdaptor()
-	relay := gpio.NewRelayDriver(r, "11")
-
-	work := func() {
-		if err := relay.Off(); err != nil {
-			fmt.Printf("error: %v", err)
-		}
+	relay := gpio.NewRelayDriver(r, RELAYPORT)
+	r.Connect()
+	if err := relay.Off(); err != nil {
+		fmt.Printf("error: %v", err)
 	}
 
-	robot := gobot.NewRobot("stopRelay",
-		[]gobot.Connection{r},
-		[]gobot.Device{relay},
-		work,
-	)
-
-	if err := robot.Start(); err != nil {
+	if err := relay.Start(); err != nil {
 		fmt.Println(err)
 	}
-	if err := robot.Stop(); err != nil {
-		fmt.Println(err)
-	}
+
 }
